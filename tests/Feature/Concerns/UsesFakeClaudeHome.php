@@ -73,6 +73,43 @@ trait UsesFakeClaudeHome
         ], $overrides), JSON_PRETTY_PRINT));
     }
 
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    protected function seedFakeRegistryFile(array $overrides = []): void
+    {
+        file_put_contents($this->fakeHome.'/registry.json', json_encode(array_replace_recursive([
+            'schema_version' => 1,
+            'active_account_key' => 'uuid-a::org-a',
+            'previous_active_account_key' => null,
+            'active_account_activated_at' => '2026-08-01T00:00:00+00:00',
+            'accounts' => [
+                [
+                    'account_key' => 'uuid-a::org-a',
+                    'account_uuid' => 'uuid-a',
+                    'organization_uuid' => 'org-a',
+                    'email' => 'a@example.com',
+                    'alias' => 'work',
+                    'organization_name' => 'Acme',
+                    'display_name' => 'A User',
+                    'created_at' => '2026-08-01T00:00:00+00:00',
+                    'last_used_at' => '2026-08-01T00:00:00+00:00',
+                ],
+                [
+                    'account_key' => 'uuid-b::org-b',
+                    'account_uuid' => 'uuid-b',
+                    'organization_uuid' => 'org-b',
+                    'email' => 'b@example.com',
+                    'alias' => null,
+                    'organization_name' => 'Beta Inc',
+                    'display_name' => 'B User',
+                    'created_at' => '2026-08-02T00:00:00+00:00',
+                    'last_used_at' => null,
+                ],
+            ],
+        ], $overrides), JSON_PRETTY_PRINT));
+    }
+
     private function deleteDirectory(string $dir): void
     {
         $items = scandir($dir);
