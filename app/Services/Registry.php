@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DataTransferObjects\AccountListing;
 use App\DataTransferObjects\AccountRecord;
+use App\DataTransferObjects\AccountSnapshot;
 use App\DataTransferObjects\RemovalResult;
 use App\DataTransferObjects\SelectorResolution;
 use App\DataTransferObjects\SelectorResolutionBatch;
@@ -168,6 +169,80 @@ final class Registry
     public function removeAll(): RemovalResult
     {
         return $this->remove(array_column($this->loadRegistry()['accounts'], 'account_key'));
+    }
+
+    public function captureFromPaths(string $credentialsPath, string $claudeJsonPath): AccountSnapshot
+    {
+        $credentials = $this->store->readJsonOrNull($credentialsPath);
+        $claudeJson = $this->store->readJsonOrNull($claudeJsonPath);
+
+        if ($credentials === null || $claudeJson === null || ! isset($claudeJson['oauthAccount'])) {
+            throw new \RuntimeException("Could not read a complete account from \"{$credentialsPath}\" and \"{$claudeJsonPath}\".");
+        }
+
+        $oauthAccount = $claudeJson['oauthAccount'];
+
+        return new AccountSnapshot(
+            accountKey: $this->deriveAccountKey($oauthAccount),
+            credentials: $credentials,
+            oauthAccount: $oauthAccount,
+            capturedAt: (new \DateTimeImmutable)->format(DATE_ATOM),
+        );
+    }
+
+    public function captureCurrentAccount(): AccountSnapshot
+    {
+        return $this->captureFromPaths($this->credentialsFile, $this->claudeJsonFile);
+    }
+
+    public function upsert(AccountSnapshot $snapshot, ?string $alias = null): AccountRecord
+    {
+        $this->ensureDirectoriesExist();
+        $this->store->writeJsonAtomic($this->snapshotPath($snapshot->accountKey), $this->codec->encode($snapshot));
+
+        $registry = $this->loadRegistry();
+        $now = $snapshot->capturedAt;
+        $existing = null;
+
+        foreach ($registry['accounts'] as $row) {
+            if ($row['account_key'] === $snapshot->accountKey) {
+                $existing = $row;
+                break;
+            }
+        }
+
+        $oauthAccount = $snapshot->oauthAccount;
+        $row = [
+            'account_key' => $snapshot->accountKey,
+            'account_uuid' => $oauthAccount['accountUuid'],
+            'organization_uuid' => $oauthAccount['organizationUuid'] ?? '',
+            'email' => $oauthAccount['emailAddress'] ?? '',
+            'alias' => $alias ?? $existing['alias'] ?? null,
+            'organization_name' => $oauthAccount['organizationName'] ?? null,
+            'display_name' => $oauthAccount['displayName'] ?? null,
+            'created_at' => $existing['created_at'] ?? $now,
+            'last_used_at' => $existing['last_used_at'] ?? null,
+        ];
+
+        $registry['accounts'] = $existing !== null
+            ? array_map(fn (array $r) => $r['account_key'] === $snapshot->accountKey ? $row : $r, $registry['accounts'])
+            : [...$registry['accounts'], $row];
+
+        $this->saveRegistry($registry);
+
+        return AccountRecord::fromArray($row);
+    }
+
+    /**
+     * @param  array<string, mixed>  $oauthAccount
+     */
+    private function deriveAccountKey(array $oauthAccount): string
+    {
+        $organizationUuid = $oauthAccount['organizationUuid'] ?? null;
+
+        return $organizationUuid !== null && $organizationUuid !== ''
+            ? "{$oauthAccount['accountUuid']}::{$organizationUuid}"
+            : $oauthAccount['accountUuid'];
     }
 
     private function snapshotPath(string $accountKey): string
