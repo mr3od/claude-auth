@@ -104,6 +104,22 @@ it('replacePreservingPermissions copies content but keeps the destination file m
         ->and(substr(sprintf('%o', fileperms($dest)), -4))->toBe('0644');
 });
 
+it('writeJsonPreservingPermissions keeps the existing file mode', function () {
+    file_put_contents($this->targetPath, json_encode(['v' => 1]));
+    chmod($this->targetPath, 0644);
+
+    $this->store->writeJsonPreservingPermissions($this->targetPath, ['v' => 2]);
+
+    expect($this->store->readJson($this->targetPath))->toBe(['v' => 2])
+        ->and(substr(sprintf('%o', fileperms($this->targetPath)), -4))->toBe('0644');
+});
+
+it('writeJsonPreservingPermissions defaults to 0600 for a brand new file', function () {
+    $this->store->writeJsonPreservingPermissions($this->targetPath, ['v' => 1]);
+
+    expect(substr(sprintf('%o', fileperms($this->targetPath)), -4))->toBe('0600');
+});
+
 it('replacePreservingPermissions defaults to 0600 when the destination did not exist yet', function () {
     $src = $this->fakeBaseDir.'/source.json';
     $dest = $this->fakeBaseDir.'/brand-new.json';

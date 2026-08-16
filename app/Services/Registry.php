@@ -10,12 +10,16 @@ use App\DataTransferObjects\SelectorResolutionStatus;
 use App\Services\Exceptions\AccountNotFoundException;
 use App\Services\Exceptions\AmbiguousSelectorException;
 use App\Services\Exceptions\InvalidAliasException;
+use App\Services\Exceptions\NoPreviousAccountException;
+use App\Services\Exceptions\RegistryCorruptException;
 
 final class Registry
 {
     private readonly AtomicJsonStore $store;
 
     private readonly SelectorResolver $resolver;
+
+    private readonly SnapshotCodec $codec;
 
     public function __construct(
         private readonly string $home,
@@ -25,6 +29,7 @@ final class Registry
     ) {
         $this->store = new AtomicJsonStore($this->home.'/backups', $this->maxBackups);
         $this->resolver = new SelectorResolver;
+        $this->codec = new SnapshotCodec;
     }
 
     public function listAccounts(): AccountListing
@@ -56,6 +61,79 @@ final class Registry
         }
 
         return new SelectorResolutionBatch($bySelector);
+    }
+
+    public function activate(string $accountKey): AccountRecord
+    {
+        $registry = $this->loadRegistry();
+
+        $accountRow = null;
+        foreach ($registry['accounts'] as $row) {
+            if ($row['account_key'] === $accountKey) {
+                $accountRow = $row;
+                break;
+            }
+        }
+
+        if ($accountRow === null) {
+            throw new AccountNotFoundException($accountKey);
+        }
+
+        $snapshotData = $this->store->readJsonOrNull($this->snapshotPath($accountKey));
+
+        if ($snapshotData === null) {
+            throw new RegistryCorruptException("Account \"{$accountKey}\" is tracked in the registry but its snapshot file is missing.");
+        }
+
+        $snapshot = $this->codec->decode($snapshotData);
+
+        $this->ensureDirectoriesExist();
+
+        // Unconditional: the live files are the ones a mistake is hardest to recover
+        // from, so they're backed up every time, even when content looks unchanged.
+        $this->store->backupUnconditional($this->credentialsFile, 'credentials.json');
+        $this->store->backupUnconditional($this->claudeJsonFile, 'claude.json');
+
+        $this->store->writeJsonPreservingPermissions($this->credentialsFile, $snapshot->credentials);
+
+        $claudeJson = $this->store->readJsonOrNull($this->claudeJsonFile) ?? [];
+        $claudeJson['oauthAccount'] = $snapshot->oauthAccount;
+        $this->store->writeJsonPreservingPermissions($this->claudeJsonFile, $claudeJson);
+
+        $now = (new \DateTimeImmutable)->format(DATE_ATOM);
+        $previouslyActive = $registry['active_account_key'];
+
+        $registry['active_account_key'] = $accountKey;
+        $registry['active_account_activated_at'] = $now;
+        if ($previouslyActive !== $accountKey) {
+            $registry['previous_active_account_key'] = $previouslyActive;
+        }
+
+        $accountRow['last_used_at'] = $now;
+        $registry['accounts'] = array_map(
+            fn (array $row) => $row['account_key'] === $accountKey ? $accountRow : $row,
+            $registry['accounts'],
+        );
+
+        $this->saveRegistry($registry);
+
+        return AccountRecord::fromArray($accountRow);
+    }
+
+    public function activatePrevious(): AccountRecord
+    {
+        $previous = $this->loadRegistry()['previous_active_account_key'];
+
+        if ($previous === null) {
+            throw new NoPreviousAccountException;
+        }
+
+        return $this->activate($previous);
+    }
+
+    private function snapshotPath(string $accountKey): string
+    {
+        return $this->home.'/accounts/'.$this->codec->filename($accountKey);
     }
 
     public function setAlias(string $selector, string $alias): AccountRecord

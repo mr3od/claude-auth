@@ -110,6 +110,54 @@ trait UsesFakeClaudeHome
         ], $overrides), JSON_PRETTY_PRINT));
     }
 
+    /**
+     * @param  array<string, mixed>  $credentials
+     * @param  array<string, mixed>  $oauthAccount
+     */
+    protected function seedFakeSnapshotFile(
+        string $accountKey,
+        array $credentials,
+        array $oauthAccount,
+        string $capturedAt = '2026-08-01T00:00:00+00:00',
+    ): void {
+        $codec = new \App\Services\SnapshotCodec;
+        $dir = $this->fakeHome.'/accounts';
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0700, recursive: true);
+        }
+
+        file_put_contents($dir.'/'.$codec->filename($accountKey), json_encode([
+            'schema_version' => 1,
+            'account_key' => $accountKey,
+            'captured_at' => $capturedAt,
+            'credentials' => $credentials,
+            'oauth_account' => $oauthAccount,
+        ], JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * Seeds a registry.json with two accounts (uuid-a::org-a "work", uuid-b::org-b
+     * "B User") plus a matching snapshot file for each, so activate()/remove() tests
+     * have real accounts to switch between.
+     */
+    protected function seedFakeAccountPair(): void
+    {
+        $this->seedFakeRegistryFile();
+
+        $this->seedFakeSnapshotFile('uuid-a::org-a', [
+            'claudeAiOauth' => ['accessToken' => 'token-a', 'refreshToken' => 'refresh-a'],
+        ], [
+            'accountUuid' => 'uuid-a', 'organizationUuid' => 'org-a', 'emailAddress' => 'a@example.com',
+        ]);
+
+        $this->seedFakeSnapshotFile('uuid-b::org-b', [
+            'claudeAiOauth' => ['accessToken' => 'token-b', 'refreshToken' => 'refresh-b'],
+        ], [
+            'accountUuid' => 'uuid-b', 'organizationUuid' => 'org-b', 'emailAddress' => 'b@example.com',
+        ]);
+    }
+
     private function deleteDirectory(string $dir): void
     {
         $items = scandir($dir);

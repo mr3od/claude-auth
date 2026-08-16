@@ -90,6 +90,16 @@ final class AtomicJsonStore
         return $toDelete;
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function writeJsonPreservingPermissions(string $path, array $data): void
+    {
+        $permissions = is_file($path) ? fileperms($path) & 0777 : 0600;
+
+        $this->writeJsonAtomic($path, $data, $permissions);
+    }
+
     public function replacePreservingPermissions(string $sourcePath, string $destPath): void
     {
         $permissions = is_file($destPath) ? fileperms($destPath) & 0777 : 0600;
