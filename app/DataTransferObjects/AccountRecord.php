@@ -16,6 +16,21 @@ final readonly class AccountRecord
         public ?string $lastUsedAt,
     ) {}
 
+    public function withAlias(?string $alias): self
+    {
+        return new self(
+            accountKey: $this->accountKey,
+            accountUuid: $this->accountUuid,
+            organizationUuid: $this->organizationUuid,
+            email: $this->email,
+            alias: $alias,
+            organizationName: $this->organizationName,
+            displayName: $this->displayName,
+            createdAt: $this->createdAt,
+            lastUsedAt: $this->lastUsedAt,
+        );
+    }
+
     public function displayLabel(): string
     {
         foreach ([$this->alias, $this->displayName, $this->email] as $candidate) {
