@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DataTransferObjects\AccountListing;
 use App\DataTransferObjects\AccountRecord;
+use App\DataTransferObjects\RemovalResult;
 use App\DataTransferObjects\SelectorResolution;
 use App\DataTransferObjects\SelectorResolutionBatch;
 use App\DataTransferObjects\SelectorResolutionStatus;
@@ -129,6 +130,44 @@ final class Registry
         }
 
         return $this->activate($previous);
+    }
+
+    /**
+     * @param  string[]  $accountKeys  already resolved - callers resolve (and confirm)
+     *                                 everything before mutating anything
+     */
+    public function remove(array $accountKeys): RemovalResult
+    {
+        $registry = $this->loadRegistry();
+
+        $removed = [];
+        $remaining = [];
+        foreach ($registry['accounts'] as $row) {
+            if (in_array($row['account_key'], $accountKeys, true)) {
+                $removed[] = $row['account_key'];
+            } else {
+                $remaining[] = $row;
+            }
+        }
+
+        $registry['accounts'] = $remaining;
+
+        if (in_array($registry['active_account_key'], $removed, true)) {
+            $registry['active_account_key'] = null;
+        }
+
+        if (in_array($registry['previous_active_account_key'], $removed, true)) {
+            $registry['previous_active_account_key'] = null;
+        }
+
+        $this->saveRegistry($registry);
+
+        return new RemovalResult($removed, $registry['active_account_key']);
+    }
+
+    public function removeAll(): RemovalResult
+    {
+        return $this->remove(array_column($this->loadRegistry()['accounts'], 'account_key'));
     }
 
     private function snapshotPath(string $accountKey): string

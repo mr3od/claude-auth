@@ -158,6 +158,14 @@ trait UsesFakeClaudeHome
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    protected function fromRegistryJson(): array
+    {
+        return json_decode(file_get_contents($this->fakeHome.'/registry.json'), true);
+    }
+
     private function deleteDirectory(string $dir): void
     {
         $items = scandir($dir);
