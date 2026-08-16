@@ -292,6 +292,46 @@ final class Registry
     }
 
     /**
+     * @return string[]  paths of deleted backup files
+     */
+    public function pruneBackups(): array
+    {
+        $deleted = [];
+        foreach (['registry.json', 'credentials.json', 'claude.json'] as $baseName) {
+            $deleted = [...$deleted, ...$this->store->pruneBackups($baseName)];
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * @return string[]  paths of deleted snapshot files
+     */
+    public function pruneOrphanedSnapshots(): array
+    {
+        if (! is_file($this->registryPath())) {
+            // Orphaned snapshots stay available for `import --purge` recovery when the
+            // registry itself is missing - deleting them here would defeat that.
+            return [];
+        }
+
+        $trackedFilenames = array_map(
+            fn (string $key) => $this->codec->filename($key),
+            array_column($this->loadRegistry()['accounts'], 'account_key'),
+        );
+
+        $deleted = [];
+        foreach (glob($this->home.'/accounts/*.snapshot.json') ?: [] as $file) {
+            if (! in_array(basename($file), $trackedFilenames, true)) {
+                unlink($file);
+                $deleted[] = $file;
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
      * @return string[]
      */
     public function exportSnapshots(?string $dir = null): array
