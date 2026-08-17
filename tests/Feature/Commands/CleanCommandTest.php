@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Tests\Feature\Concerns\UsesFakeClaudeHome;
 
 uses(UsesFakeClaudeHome::class);
@@ -15,7 +16,7 @@ it('reports zero removed when there is nothing to clean', function () {
 
 it('removes orphaned snapshot files and reports the count', function () {
     $this->seedFakeAccountPair();
-    Illuminate\Support\Facades\Artisan::call('remove', ['selectors' => ['work'], '--force' => true]);
+    Artisan::call('remove', ['selectors' => ['work'], '--force' => true]);
 
     $this->artisan('clean')
         ->expectsOutputToContain('1 orphaned snapshot(s) removed')

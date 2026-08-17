@@ -18,8 +18,8 @@ final class ScratchLoginRunner
      * caller's real ~/.claude state, so a failed or partial login can never corrupt it.
      *
      * @param  callable(string $type, string $output): void|null  $onOutput  defaults to
-     *         passing the subprocess's own stdout/stderr straight through, since the login
-     *         flow prints a URL or device code the user must see immediately
+     *                                                                       passing the subprocess's own stdout/stderr straight through, since the login
+     *                                                                       flow prints a URL or device code the user must see immediately
      */
     public function run(
         ?string $email = null,

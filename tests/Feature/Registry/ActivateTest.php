@@ -5,6 +5,7 @@ use App\Services\Exceptions\NoPreviousAccountException;
 use App\Services\Exceptions\RegistryCorruptException;
 use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\Registry;
+use App\Services\SnapshotCodec;
 use Tests\Feature\Concerns\UsesFakeClaudeHome;
 
 uses(UsesFakeClaudeHome::class);
@@ -129,7 +130,7 @@ it('throws RegistryCorruptException when the registry tracks an account whose sn
 it('throws RegistryCorruptException, not a raw PHP error, for a snapshot file missing required fields', function () {
     $this->seedFakeRegistryFile();
     mkdir($this->fakeHome.'/accounts', recursive: true);
-    $codec = new App\Services\SnapshotCodec;
+    $codec = new SnapshotCodec;
     file_put_contents($this->fakeHome.'/accounts/'.$codec->filename('uuid-a::org-a'), json_encode([
         'schema_version' => 1, 'account_key' => 'uuid-a::org-a',
         // missing "credentials" and "oauth_account"

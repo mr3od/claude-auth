@@ -321,7 +321,7 @@ final class Registry
     }
 
     /**
-     * @return string[]  paths of deleted backup files
+     * @return string[] paths of deleted backup files
      */
     public function pruneBackups(): array
     {
@@ -334,7 +334,7 @@ final class Registry
     }
 
     /**
-     * @return string[]  paths of deleted snapshot files
+     * @return string[] paths of deleted snapshot files
      */
     public function pruneOrphanedSnapshots(): array
     {
