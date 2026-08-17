@@ -10,6 +10,8 @@ history, and memory centralized across accounts.
 - Run the CLI locally: `php claude-auth <command>`
 - Run the full test suite: `vendor/bin/pest`
 - Run one test file: `vendor/bin/pest tests/Feature/Registry/ActivateTest.php`
+- Check code style: `vendor/bin/pint --test` (or `composer lint`)
+- Fix code style: `vendor/bin/pint` (or `composer lint:fix`)
 
 ## Code style
 

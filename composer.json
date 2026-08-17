@@ -32,6 +32,11 @@
             "Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "lint": "pint --test",
+        "lint:fix": "pint",
+        "test": "pest"
+    },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
