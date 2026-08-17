@@ -1,5 +1,5 @@
 {
-    "name": "obadido/claude-auth",
+    "name": "mr3od/claude-auth",
     "description": "CLI tool to store and switch between multiple Claude Code account credentials, keeping settings/history/memory centralized.",
     "keywords": ["claude", "claude-code", "cli", "accounts", "auth"],
     "type": "project",
