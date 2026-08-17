@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Lint
+        run: vendor/bin/pint --test
+
       - name: Run tests
         run: vendor/bin/pest
 

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Concerns;
 
+use App\Services\SnapshotCodec;
+
 trait UsesFakeClaudeHome
 {
     protected string $fakeBaseDir;
@@ -120,7 +122,7 @@ trait UsesFakeClaudeHome
         array $oauthAccount,
         string $capturedAt = '2026-08-01T00:00:00+00:00',
     ): void {
-        $codec = new \App\Services\SnapshotCodec;
+        $codec = new SnapshotCodec;
         $dir = $this->fakeHome.'/accounts';
 
         if (! is_dir($dir)) {

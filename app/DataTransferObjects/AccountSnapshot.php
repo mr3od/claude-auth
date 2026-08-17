@@ -6,8 +6,8 @@ final readonly class AccountSnapshot
 {
     /**
      * @param  mixed  $credentials  byte-shape-identical to the live .credentials.json file - an
-     *                               object/array mix straight from json_decode(), not normalized,
-     *                               so an empty JSON object never gets flattened into an empty array
+     *                              object/array mix straight from json_decode(), not normalized,
+     *                              so an empty JSON object never gets flattened into an empty array
      * @param  array<string, mixed>  $oauthAccount  byte-shape-identical to ~/.claude.json's oauthAccount key
      */
     public function __construct(
@@ -19,9 +19,9 @@ final readonly class AccountSnapshot
 
     /**
      * @param  array<string, mixed>|object  $decoded  an array when read via readJsonOrNull()
-     *         (e.g. constructed by hand in a test), an object when read via
-     *         readJsonPreservingTypes() (the real read path, which is what preserves
-     *         $credentials's object/array shape)
+     *                                                (e.g. constructed by hand in a test), an object when read via
+     *                                                readJsonPreservingTypes() (the real read path, which is what preserves
+     *                                                $credentials's object/array shape)
      */
     public static function fromSnapshotFile(array|object $decoded): self
     {

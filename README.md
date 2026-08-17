@@ -120,3 +120,4 @@ See [`AGENTS.md`](AGENTS.md) for this project's coding conventions.
 ## License
 
 claude-auth is open-source software licensed under the [MIT license](LICENSE).
+

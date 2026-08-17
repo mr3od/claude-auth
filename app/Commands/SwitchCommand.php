@@ -55,7 +55,7 @@ class SwitchCommand extends Command
      * handling (AccountNotFoundException/RegistryCorruptException/UnsupportedPlatformException)
      * can't drift out of sync between the direct-query and "-" paths the way it once did.
      *
-     * @param  \Closure(): \App\DataTransferObjects\AccountRecord  $activate
+     * @param  \Closure(): AccountRecord  $activate
      */
     private function activateAndSucceed(\Closure $activate, bool $json): int
     {
