@@ -33,29 +33,34 @@ class SwitchCommand extends Command
 
         if ($query === '-') {
             try {
-                return $this->succeed($registry->activatePrevious(), $json);
+                return $this->activateAndSucceed(fn () => $registry->activatePrevious(), $json);
             } catch (NoPreviousAccountException $e) {
                 return $this->handledError($e->getMessage(), $json, 'no_previous_account');
-            } catch (UnsupportedPlatformException $e) {
-                return $this->handledError($e->getMessage(), $json, 'unsupported_platform');
             }
         }
 
         $resolution = $registry->resolve($query);
 
         return match ($resolution->status) {
-            SelectorResolutionStatus::Found => $this->activateAndSucceed($registry, $resolution->match->accountKey, $json),
+            SelectorResolutionStatus::Found => $this->activateAndSucceed(fn () => $registry->activate($resolution->match->accountKey), $json),
             SelectorResolutionStatus::NotFound => $this->handledError("No account matches \"{$query}\".", $json, 'not_found'),
             SelectorResolutionStatus::Ambiguous => $json
                 ? $this->ambiguousJson($query, $resolution->candidates)
-                : $this->activateAndSucceed($registry, $this->pickFrom('Multiple accounts match. Which one?', $resolution->candidates), false),
+                : $this->activateAndSucceed(fn () => $registry->activate($this->pickFrom('Multiple accounts match. Which one?', $resolution->candidates)), false),
         };
     }
 
-    private function activateAndSucceed(Registry $registry, string $accountKey, bool $json): int
+    /**
+     * Shared by every path that ends in an activate()/activatePrevious() call, so the exception
+     * handling (AccountNotFoundException/RegistryCorruptException/UnsupportedPlatformException)
+     * can't drift out of sync between the direct-query and "-" paths the way it once did.
+     *
+     * @param  \Closure(): \App\DataTransferObjects\AccountRecord  $activate
+     */
+    private function activateAndSucceed(\Closure $activate, bool $json): int
     {
         try {
-            return $this->succeed($registry->activate($accountKey), $json);
+            return $this->succeed($activate(), $json);
         } catch (AccountNotFoundException $e) {
             return $this->handledError($e->getMessage(), $json, 'not_found');
         } catch (RegistryCorruptException $e) {
@@ -75,7 +80,9 @@ class SwitchCommand extends Command
             return self::SUCCESS;
         }
 
-        return $this->activateAndSucceed($registry, $this->pickFrom('Switch to which account?', $listing->accounts), false);
+        $accountKey = $this->pickFrom('Switch to which account?', $listing->accounts);
+
+        return $this->activateAndSucceed(fn () => $registry->activate($accountKey), false);
     }
 
     /**

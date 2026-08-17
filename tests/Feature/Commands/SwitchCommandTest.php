@@ -48,6 +48,15 @@ it('reports a handled error for "-" when there is no previous account', function
         ->assertExitCode(1);
 });
 
+it('reports a handled error, not a crash, when "-" points at a corrupt snapshot', function () {
+    Artisan::call('switch', ['query' => '2']); // account B is now active, A is "previous"
+    array_map('unlink', glob($this->fakeHome.'/accounts/*.snapshot.json'));
+
+    $this->artisan('switch', ['query' => '-'])
+        ->expectsOutputToContain('tracked in the registry but its snapshot file is missing')
+        ->assertExitCode(1);
+});
+
 it('prompts interactively when no query is given', function () {
     $this->artisan('switch')
         ->expectsChoice(
