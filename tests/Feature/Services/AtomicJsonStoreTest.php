@@ -120,6 +120,31 @@ it('writeJsonPreservingPermissions defaults to 0600 for a brand new file', funct
     expect(substr(sprintf('%o', fileperms($this->targetPath)), -4))->toBe('0600');
 });
 
+it('mergeTopLevelKey replaces one key without disturbing sibling empty-object fields', function () {
+    // json_decode(..., true) can't tell an empty JSON object from an empty
+    // array, so a naive decode-merge-encode round trip silently turns every
+    // "mcpServers": {} into "mcpServers": [] across the whole file.
+    file_put_contents($this->targetPath, json_encode([
+        'oauthAccount' => ['accountUuid' => 'old-uuid'],
+        'projects' => ['/repo' => ['mcpServers' => new stdClass]],
+        'seenNotifications' => new stdClass,
+    ]));
+    chmod($this->targetPath, 0644);
+
+    $this->store->mergeTopLevelKey($this->targetPath, 'oauthAccount', ['accountUuid' => 'new-uuid']);
+
+    $raw = file_get_contents($this->targetPath);
+    $decodedAsObjects = json_decode($raw);
+    expect($decodedAsObjects->projects->{'/repo'}->mcpServers)->toEqual(new stdClass)
+        ->and($decodedAsObjects->seenNotifications)->toEqual(new stdClass)
+        ->and(json_decode($raw, true))->toBe([
+            'oauthAccount' => ['accountUuid' => 'new-uuid'],
+            'projects' => ['/repo' => ['mcpServers' => []]],
+            'seenNotifications' => [],
+        ])
+        ->and(substr(sprintf('%o', fileperms($this->targetPath)), -4))->toBe('0644');
+});
+
 it('replacePreservingPermissions defaults to 0600 when the destination did not exist yet', function () {
     $src = $this->fakeBaseDir.'/source.json';
     $dest = $this->fakeBaseDir.'/brand-new.json';

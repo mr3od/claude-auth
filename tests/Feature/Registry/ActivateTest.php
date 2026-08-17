@@ -42,6 +42,22 @@ it('merges only the oauthAccount key into ~/.claude.json, leaving every other ke
         ->and($oauthAccountAfter['accountUuid'])->toBe('uuid-b');
 });
 
+it('does not corrupt empty JSON objects elsewhere in ~/.claude.json into empty arrays', function () {
+    $this->seedFakeAccountPair();
+    $this->seedFakeCredentialsFile();
+    file_put_contents($this->fakeClaudeJsonFile, json_encode([
+        'oauthAccount' => ['accountUuid' => 'uuid-a'],
+        'projects' => ['/repo' => ['mcpServers' => new stdClass]],
+        'seenNotifications' => new stdClass,
+    ]));
+
+    $this->registry->activate('uuid-b::org-b');
+
+    $after = json_decode(file_get_contents($this->fakeClaudeJsonFile));
+    expect($after->projects->{'/repo'}->mcpServers)->toEqual(new stdClass)
+        ->and($after->seenNotifications)->toEqual(new stdClass);
+});
+
 it('preserves the live credentials file\'s pre-existing permission mode', function () {
     $this->seedFakeAccountPair();
     $this->seedFakeCredentialsFile();

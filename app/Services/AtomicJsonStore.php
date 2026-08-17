@@ -100,6 +100,30 @@ final class AtomicJsonStore
         $this->writeJsonAtomic($path, $data, $permissions);
     }
 
+    /**
+     * Replaces exactly one top-level key in a JSON file, leaving every other
+     * field byte-identical - including empty objects. `json_decode(...,
+     * true)` can't tell an empty JSON object from an empty array, so a
+     * decode-to-array-then-encode round trip silently turns every `{}` in
+     * the file into `[]`. Decoding without `assoc` keeps that distinction.
+     *
+     * @param  array<string, mixed>  $value
+     */
+    public function mergeTopLevelKey(string $path, string $key, array $value): void
+    {
+        $decoded = is_file($path) ? json_decode(file_get_contents($path)) : new \stdClass;
+        $decoded->{$key} = json_decode(json_encode($value));
+
+        $permissions = is_file($path) ? fileperms($path) & 0777 : 0600;
+
+        $dir = dirname($path);
+        $tempPath = $dir.'/.'.basename($path).'.tmp.'.bin2hex(random_bytes(6));
+
+        file_put_contents($tempPath, json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        chmod($tempPath, $permissions);
+        rename($tempPath, $path);
+    }
+
     public function replacePreservingPermissions(string $sourcePath, string $destPath): void
     {
         $permissions = is_file($destPath) ? fileperms($destPath) & 0777 : 0600;

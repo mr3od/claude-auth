@@ -99,10 +99,7 @@ final class Registry
         $this->store->backupUnconditional($this->claudeJsonFile, 'claude.json');
 
         $this->store->writeJsonPreservingPermissions($this->credentialsFile, $snapshot->credentials);
-
-        $claudeJson = $this->store->readJsonOrNull($this->claudeJsonFile) ?? [];
-        $claudeJson['oauthAccount'] = $snapshot->oauthAccount;
-        $this->store->writeJsonPreservingPermissions($this->claudeJsonFile, $claudeJson);
+        $this->store->mergeTopLevelKey($this->claudeJsonFile, 'oauthAccount', $snapshot->oauthAccount);
 
         $now = (new \DateTimeImmutable)->format(DATE_ATOM);
         $previouslyActive = $registry['active_account_key'];
