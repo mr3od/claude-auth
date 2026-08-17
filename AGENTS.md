@@ -28,12 +28,11 @@ history, and memory centralized across accounts.
 ## Live-file safety (read before touching credential/auth files)
 
 - **Linux only, by design.** Claude Code stores credentials in a plain file only on Linux. macOS
-  uses the encrypted Keychain (no file to manage at all — `CLAUDE_CONFIG_DIR` relocation is only
-  documented "on Linux or Windows," so it can't be trusted to isolate a login on macOS either).
-  Windows uses a different, currently-unresolved path (`%USERPROFILE%\.claude\.credentials.json`).
-  `Registry::activate()`/`captureCurrentAccount()` and `ScratchLoginRunner::run()` all guard on
-  `PHP_OS_FAMILY` and throw `UnsupportedPlatformException` off Linux — don't remove that guard
-  without actually implementing Keychain/Windows-path support first.
+  uses the encrypted Keychain — no file to manage. Windows uses a different, unresolved path
+  (`%USERPROFILE%\.claude\.credentials.json`). `Registry::activate()`/`captureCurrentAccount()` and
+  `ScratchLoginRunner::run()` guard on `PHP_OS_FAMILY` and throw `UnsupportedPlatformException` off
+  Linux. Removing that guard requires implementing Keychain support (macOS) or the correct path
+  resolution (Windows) first.
 - `~/.claude/.credentials.json` and `~/.claude.json` are files Claude Code itself owns and reads
   every session. Any code path that overwrites either one must back it up to
   `~/.claude-auth/backups/` **unconditionally, before writing** — not "if changed." This is the
@@ -42,16 +41,14 @@ history, and memory centralized across accounts.
   `json_decode(..., true)` if any part of it will be written back. PHP can't distinguish an empty
   JSON object (`{}`) from an empty array (`[]`) once decoded to an associative array, so a
   decode-then-encode round trip silently corrupts any `"field": {}` into `"field": []`. Use
-  `AtomicJsonStore::readJsonPreservingTypes()` for any such read instead. (This is a real bug that
-  shipped once and was fixed — see `docs/*` commit history around `activate()`.)
-- Before trusting a change to a file-mutating command against real credentials, verify it in a
-  throwaway sandbox first: copy `~/.claude-auth` and the live files into a temp dir, run the
-  command there with `CLAUDE_AUTH_HOME`/`CLAUDE_CREDENTIALS_FILE`/`CLAUDE_JSON_FILE` env overrides,
-  and diff the result. Passing unit tests is necessary but not sufficient — hand-authored test
-  fixtures can miss structural properties real data has.
+  `AtomicJsonStore::readJsonPreservingTypes()` for any such read instead.
+- Verify a file-mutating command in a throwaway sandbox before trusting it against real
+  credentials: copy `~/.claude-auth` and the live files into a temp dir, run the command there
+  with `CLAUDE_AUTH_HOME`/`CLAUDE_CREDENTIALS_FILE`/`CLAUDE_JSON_FILE` env overrides, and diff the
+  result. Hand-authored test fixtures can miss structural properties real data has.
 - **Never print, `cat`, or dump the full contents of a credentials/token file to a terminal or
-  conversation**, even a throwaway copy of one — filter output to only the specific field(s) under
-  test. A copy of real data still contains the real secret values.
+  log**, even a throwaway copy of one — filter output to the specific field(s) under test. A copy
+  of real data still contains the real secret values.
 
 ## Testing instructions
 

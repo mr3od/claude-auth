@@ -7,6 +7,19 @@
 claude-auth stores and switches between multiple Claude Code account credentials. It keeps your
 settings, history, and memory centralized across every account — no forking, no separate profiles.
 
+```
+$ claude-auth accounts
++---+--------+----------+------------------+------------------------+
+| # | Active | Account  | Email            | Organization           |
++---+--------+----------+------------------+------------------------+
+| 1 | *      | work     | jane@acme.com    | Acme Inc               |
+| 2 |        | personal | jane@example.com | jane@example.com's Org |
++---+--------+----------+------------------+------------------------+
+
+$ claude-auth switch personal
+Switched to personal (jane@example.com).
+```
+
 ## Platform support
 
 **Linux only, for now.** Claude Code stores credentials differently per platform — see
@@ -18,8 +31,7 @@ settings, history, and memory centralized across every account — no forking, n
 - **Windows**: a file, but at a different path (`%USERPROFILE%\.claude\.credentials.json`) that
   claude-auth doesn't yet resolve. Untested and not currently supported.
 
-Running a live-file command (`switch`, `login`) on an unsupported platform fails with a clear
-error instead of corrupting anything.
+`switch` and `login` refuse to run on an unsupported platform, with a clear error message.
 
 ## Install
 
@@ -76,7 +88,7 @@ claude-auth switch -              # Switch back to the previously active account
 
 Run `claude-auth <command> --help` for full option details.
 
-## Design
+## How it works
 
 - `~/.claude-auth/registry.json` stores this tool's own index: account identities, aliases, and
   timestamps. It never stores raw credentials.
@@ -84,19 +96,15 @@ Run `claude-auth <command> --help` for full option details.
   credentials file's contents, plus the `oauthAccount` block from `~/.claude.json`.
 - `~/.claude/.credentials.json` and `~/.claude.json` are the live files Claude Code itself reads.
   `switch` replaces `.credentials.json` entirely and merges only the `oauthAccount` key into
-  `~/.claude.json`, leaving every other key — history, projects, settings — untouched. Switching
-  preserves the live file's existing permissions and requires restarting any running `claude`
-  session to pick up the change.
-- Before `switch` overwrites a live file, claude-auth backs it up to `~/.claude-auth/backups/`,
-  unconditionally, every time. To roll back by hand, copy the newest matching backup file back
-  over the live path. `login` never touches the live files — it runs in an isolated scratch
-  config directory and only stores the result as a new account; run `switch` to make it active.
-- claude-auth never calls an undocumented Anthropic endpoint with a raw token.
+  `~/.claude.json`, leaving every other key — history, projects, settings — untouched. Restart any
+  running `claude` session to pick up the change.
+- `switch` backs up both live files to `~/.claude-auth/backups/` before every write. To roll back
+  by hand, copy the newest matching backup file back over the live path.
+- `login` never touches the live files. It runs in an isolated scratch config directory and stores
+  the result as a new account; run `switch` to make it active.
 
-The design follows primary-source research into
-[`Loongphy/codex-auth`](https://github.com/Loongphy/codex-auth), a similar tool for the OpenAI
-Codex CLI. See [`docs/codex-auth-research.md`](docs/codex-auth-research.md) for the full findings,
-and the "Applicability to a Claude Code Equivalent" section for the mapping this project follows.
+Inspired by [`codex-auth`](https://github.com/Loongphy/codex-auth), a similar tool for the OpenAI
+Codex CLI. Background research: [`docs/codex-auth-research.md`](docs/codex-auth-research.md).
 
 ## Contributing
 
