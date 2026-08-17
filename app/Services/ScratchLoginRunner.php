@@ -4,10 +4,15 @@ namespace App\Services;
 
 use App\DataTransferObjects\ScratchLoginResult;
 use App\Services\Exceptions\ScratchLoginFailedException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 use Illuminate\Support\Facades\Process;
 
 final class ScratchLoginRunner
 {
+    public function __construct(
+        private readonly string $osFamily = PHP_OS_FAMILY,
+    ) {}
+
     /**
      * Runs "claude auth login" against an isolated scratch CLAUDE_CONFIG_DIR, never the
      * caller's real ~/.claude state, so a failed or partial login can never corrupt it.
@@ -22,6 +27,13 @@ final class ScratchLoginRunner
         bool $sso = false,
         ?callable $onOutput = null,
     ): ScratchLoginResult {
+        // Anthropic's own docs only document CLAUDE_CONFIG_DIR relocating .credentials.json "on
+        // Linux or Windows" - on macOS, Claude Code stores credentials in the Keychain regardless,
+        // so this scratch-dir isolation trick can't be trusted to avoid the real system Keychain.
+        if ($this->osFamily !== 'Linux') {
+            throw new UnsupportedPlatformException($this->osFamily);
+        }
+
         $scratchDir = sys_get_temp_dir().'/claude-auth-login-'.bin2hex(random_bytes(6));
         mkdir($scratchDir, 0700, recursive: true);
 

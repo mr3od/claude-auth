@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Exceptions\ScratchLoginFailedException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\ScratchLoginRunner;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
@@ -46,6 +47,10 @@ it('passes --email, --console, and --sso through to the subprocess command', fun
     $result = (new ScratchLoginRunner)->run(email: 'x@example.com', console: true, sso: true, onOutput: fn () => null);
     ($result->cleanup)();
 });
+
+it('refuses to run on an unsupported platform', function () {
+    (new ScratchLoginRunner(osFamily: 'Darwin'))->run(onOutput: fn () => null);
+})->throws(UnsupportedPlatformException::class);
 
 it('cleans up the scratch dir and throws on a failed login, never returning a result', function () {
     $capturedScratchDir = null;

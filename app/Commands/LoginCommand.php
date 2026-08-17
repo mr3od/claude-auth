@@ -3,6 +3,7 @@
 namespace App\Commands;
 
 use App\Services\Exceptions\ScratchLoginFailedException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\Registry;
 use App\Services\ScratchLoginRunner;
 use LaravelZero\Framework\Commands\Command;
@@ -21,7 +22,7 @@ class LoginCommand extends Command
             $result = $runner->run(onOutput: function (string $type, string $output) {
                 $this->output->write($output);
             });
-        } catch (ScratchLoginFailedException $e) {
+        } catch (ScratchLoginFailedException|UnsupportedPlatformException $e) {
             $this->error($e->getMessage());
 
             return self::FAILURE;

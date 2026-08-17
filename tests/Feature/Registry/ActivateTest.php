@@ -3,6 +3,7 @@
 use App\Services\Exceptions\AccountNotFoundException;
 use App\Services\Exceptions\NoPreviousAccountException;
 use App\Services\Exceptions\RegistryCorruptException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\Registry;
 use Tests\Feature\Concerns\UsesFakeClaudeHome;
 
@@ -145,3 +146,15 @@ it('throws NoPreviousAccountException when there is nothing to switch back to', 
 
     $this->registry->activatePrevious();
 })->throws(NoPreviousAccountException::class);
+
+it('refuses to activate on an unsupported platform', function () {
+    $this->seedFakeAccountPair();
+    $this->seedFakeCredentialsFile();
+    $this->seedFakeClaudeJsonFile();
+    $registry = new Registry(
+        $this->fakeHome, $this->fakeCredentialsFile, $this->fakeClaudeJsonFile,
+        maxBackups: 5, osFamily: 'Darwin',
+    );
+
+    $registry->activate('uuid-b::org-b');
+})->throws(UnsupportedPlatformException::class);

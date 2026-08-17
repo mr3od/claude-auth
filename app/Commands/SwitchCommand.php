@@ -7,6 +7,7 @@ use App\DataTransferObjects\SelectorResolutionStatus;
 use App\Services\Exceptions\AccountNotFoundException;
 use App\Services\Exceptions\NoPreviousAccountException;
 use App\Services\Exceptions\RegistryCorruptException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\Registry;
 use LaravelZero\Framework\Commands\Command;
 
@@ -35,6 +36,8 @@ class SwitchCommand extends Command
                 return $this->succeed($registry->activatePrevious(), $json);
             } catch (NoPreviousAccountException $e) {
                 return $this->handledError($e->getMessage(), $json, 'no_previous_account');
+            } catch (UnsupportedPlatformException $e) {
+                return $this->handledError($e->getMessage(), $json, 'unsupported_platform');
             }
         }
 
@@ -57,6 +60,8 @@ class SwitchCommand extends Command
             return $this->handledError($e->getMessage(), $json, 'not_found');
         } catch (RegistryCorruptException $e) {
             return $this->handledError($e->getMessage(), $json, 'registry_corrupt');
+        } catch (UnsupportedPlatformException $e) {
+            return $this->handledError($e->getMessage(), $json, 'unsupported_platform');
         }
     }
 

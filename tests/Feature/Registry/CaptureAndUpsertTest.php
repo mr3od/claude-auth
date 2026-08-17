@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Exceptions\UnsupportedPlatformException;
 use App\Services\Registry;
 use Tests\Feature\Concerns\UsesFakeClaudeHome;
 
@@ -59,6 +60,17 @@ it('captureCurrentAccount reads the configured live paths', function () {
 
     expect($snapshot->accountKey)->toBe('fake-account-uuid::fake-org-uuid');
 });
+
+it('refuses to captureCurrentAccount on an unsupported platform', function () {
+    $this->seedFakeCredentialsFile();
+    $this->seedFakeClaudeJsonFile();
+    $registry = new Registry(
+        $this->fakeHome, $this->fakeCredentialsFile, $this->fakeClaudeJsonFile,
+        maxBackups: 5, osFamily: 'Windows',
+    );
+
+    $registry->captureCurrentAccount();
+})->throws(UnsupportedPlatformException::class);
 
 it('upsert writes a new snapshot file and adds a new registry entry', function () {
     $snapshot = $this->registry->captureFromPaths($this->scratchDir.'/.credentials.json', $this->scratchDir.'/.claude.json');

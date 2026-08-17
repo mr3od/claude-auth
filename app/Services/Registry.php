@@ -16,6 +16,7 @@ use App\Services\Exceptions\BatchImportAliasNotAllowedException;
 use App\Services\Exceptions\InvalidAliasException;
 use App\Services\Exceptions\NoPreviousAccountException;
 use App\Services\Exceptions\RegistryCorruptException;
+use App\Services\Exceptions\UnsupportedPlatformException;
 
 final class Registry
 {
@@ -30,10 +31,25 @@ final class Registry
         private readonly string $credentialsFile,
         private readonly string $claudeJsonFile,
         private readonly int $maxBackups,
+        private readonly string $osFamily = PHP_OS_FAMILY,
     ) {
         $this->store = new AtomicJsonStore($this->home.'/backups', $this->maxBackups);
         $this->resolver = new SelectorResolver;
         $this->codec = new SnapshotCodec;
+    }
+
+    /**
+     * Only Linux stores Claude Code credentials in a plain file at a predictable path. macOS
+     * stores them in the encrypted Keychain instead - there is no file for this tool to manage.
+     * Windows uses a different file location this tool doesn't yet resolve. Guards every method
+     * that touches the live credentials/claude.json paths; claude-auth's own registry/snapshot
+     * files are unaffected and safe to use from any platform.
+     */
+    private function assertSupportedPlatform(): void
+    {
+        if ($this->osFamily !== 'Linux') {
+            throw new UnsupportedPlatformException($this->osFamily);
+        }
     }
 
     public function listAccounts(): AccountListing
@@ -69,6 +85,8 @@ final class Registry
 
     public function activate(string $accountKey): AccountRecord
     {
+        $this->assertSupportedPlatform();
+
         $registry = $this->loadRegistry();
 
         $accountRow = null;
@@ -191,6 +209,8 @@ final class Registry
 
     public function captureCurrentAccount(): AccountSnapshot
     {
+        $this->assertSupportedPlatform();
+
         return $this->captureFromPaths($this->credentialsFile, $this->claudeJsonFile);
     }
 
