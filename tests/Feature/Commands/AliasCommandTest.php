@@ -41,6 +41,11 @@ it('reports a clear error when the selector matches no account', function () {
 });
 
 it('lists candidates when the selector is ambiguous', function () {
-    Artisan::call('alias', ['action' => 'set', 'selector' => '99', 'alias' => 'x']);
-    expect(Artisan::output())->toContain('No account matches');
+    // "example.com" is a substring of both seeded accounts' emails - genuinely ambiguous,
+    // unlike a bare out-of-range row number, which always resolves as NotFound.
+    Artisan::call('alias', ['action' => 'set', 'selector' => 'example.com', 'alias' => 'x']);
+
+    expect(Artisan::output())
+        ->toContain('a@example.com')
+        ->toContain('b@example.com');
 });

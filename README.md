@@ -87,9 +87,10 @@ Run `claude-auth <command> --help` for full option details.
   `~/.claude.json`, leaving every other key — history, projects, settings — untouched. Switching
   preserves the live file's existing permissions and requires restarting any running `claude`
   session to pick up the change.
-- Before `switch` or `login` overwrites a live file, claude-auth backs it up to
-  `~/.claude-auth/backups/`, unconditionally, every time. To roll back by hand, copy the newest
-  matching backup file back over the live path.
+- Before `switch` overwrites a live file, claude-auth backs it up to `~/.claude-auth/backups/`,
+  unconditionally, every time. To roll back by hand, copy the newest matching backup file back
+  over the live path. `login` never touches the live files — it runs in an isolated scratch
+  config directory and only stores the result as a new account; run `switch` to make it active.
 - claude-auth never calls an undocumented Anthropic endpoint with a raw token.
 
 The design follows primary-source research into
