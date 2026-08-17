@@ -12,14 +12,24 @@ settings, history, and memory centralized across every account — no forking, n
 ### Prebuilt binary (recommended)
 
 Download the binary for your platform from the
-[Releases page](https://github.com/mr3od/claude-auth/releases). It bundles its own PHP runtime, so
-you don't need PHP installed.
+[latest release](https://github.com/mr3od/claude-auth/releases/latest). It bundles its own PHP
+runtime, so you don't need PHP installed.
 
 ```bash
-curl -L -o claude-auth <release-asset-url-for-your-platform>
+# macOS (Apple Silicon)
+curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-macos-arm64
+# macOS (Intel)
+curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-macos-x64
+# Linux (x86_64)
+curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-linux-x64
+# Linux (arm64)
+curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-linux-arm64
+
 chmod +x claude-auth
 sudo mv claude-auth /usr/local/bin/claude-auth
 ```
+
+Windows users can download `claude-auth-windows-x64.exe` from the same release page.
 
 ### Composer
 
