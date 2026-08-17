@@ -7,6 +7,20 @@
 claude-auth stores and switches between multiple Claude Code account credentials. It keeps your
 settings, history, and memory centralized across every account — no forking, no separate profiles.
 
+## Platform support
+
+**Linux only, for now.** Claude Code stores credentials differently per platform — see
+[Anthropic's own docs](https://code.claude.com/docs/en/authentication#credential-management):
+
+- **Linux**: a plain file at `~/.claude/.credentials.json`. This is what claude-auth manages.
+- **macOS**: the encrypted system Keychain, not a file. claude-auth's file-swap design has
+  nothing to manage there, so it refuses to run rather than silently doing nothing.
+- **Windows**: a file, but at a different path (`%USERPROFILE%\.claude\.credentials.json`) that
+  claude-auth doesn't yet resolve. Untested and not currently supported.
+
+Running a live-file command (`switch`, `login`) on an unsupported platform fails with a clear
+error instead of corrupting anything.
+
 ## Install
 
 ### Prebuilt binary (recommended)
@@ -16,10 +30,6 @@ Download the binary for your platform from the
 runtime, so you don't need PHP installed.
 
 ```bash
-# macOS (Apple Silicon)
-curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-macos-arm64
-# macOS (Intel)
-curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-macos-x64
 # Linux (x86_64)
 curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/download/claude-auth-linux-x64
 # Linux (arm64)
@@ -28,8 +38,6 @@ curl -L -o claude-auth https://github.com/mr3od/claude-auth/releases/latest/down
 chmod +x claude-auth
 sudo mv claude-auth /usr/local/bin/claude-auth
 ```
-
-Windows users can download `claude-auth-windows-x64.exe` from the same release page.
 
 ### Composer
 

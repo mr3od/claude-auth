@@ -27,6 +27,13 @@ history, and memory centralized across accounts.
 
 ## Live-file safety (read before touching credential/auth files)
 
+- **Linux only, by design.** Claude Code stores credentials in a plain file only on Linux. macOS
+  uses the encrypted Keychain (no file to manage at all — `CLAUDE_CONFIG_DIR` relocation is only
+  documented "on Linux or Windows," so it can't be trusted to isolate a login on macOS either).
+  Windows uses a different, currently-unresolved path (`%USERPROFILE%\.claude\.credentials.json`).
+  `Registry::activate()`/`captureCurrentAccount()` and `ScratchLoginRunner::run()` all guard on
+  `PHP_OS_FAMILY` and throw `UnsupportedPlatformException` off Linux — don't remove that guard
+  without actually implementing Keychain/Windows-path support first.
 - `~/.claude/.credentials.json` and `~/.claude.json` are files Claude Code itself owns and reads
   every session. Any code path that overwrites either one must back it up to
   `~/.claude-auth/backups/` **unconditionally, before writing** — not "if changed." This is the

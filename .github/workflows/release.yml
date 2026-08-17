@@ -39,26 +39,23 @@ jobs:
         run: composer global require phpacker/phpacker --no-interaction
 
       - name: Build standalone binaries
+        # Linux only for now: Claude Code stores credentials in the macOS Keychain (not a file),
+        # and this tool's config doesn't yet resolve Windows's %USERPROFILE% credentials path -
+        # see UnsupportedPlatformException. Revisit once those are actually supported.
         run: |
           set -e
           PHPACKER="$(composer global config bin-dir --absolute)/phpacker"
-          "$PHPACKER" build --src=./builds/claude-auth.phar --php=8.3 --no-interaction mac x64
-          "$PHPACKER" build --src=./builds/claude-auth.phar --php=8.3 --no-interaction mac arm
           "$PHPACKER" build --src=./builds/claude-auth.phar --php=8.3 --no-interaction linux x64
           "$PHPACKER" build --src=./builds/claude-auth.phar --php=8.3 --no-interaction linux arm
-          "$PHPACKER" build --src=./builds/claude-auth.phar --php=8.3 --no-interaction windows x64
 
       - name: Rename binaries for release
         run: |
           set -e
           mkdir -p dist
-          cp builds/build/mac/mac-x64 dist/claude-auth-macos-x64
-          cp builds/build/mac/mac-arm dist/claude-auth-macos-arm64
           cp builds/build/linux/linux-x64 dist/claude-auth-linux-x64
           cp builds/build/linux/linux-arm dist/claude-auth-linux-arm64
-          cp builds/build/windows/windows-x64.exe dist/claude-auth-windows-x64.exe
           cp builds/claude-auth.phar dist/claude-auth.phar
-          chmod +x dist/claude-auth-macos-x64 dist/claude-auth-macos-arm64 dist/claude-auth-linux-x64 dist/claude-auth-linux-arm64
+          chmod +x dist/claude-auth-linux-x64 dist/claude-auth-linux-arm64
 
       - name: Create release
         uses: softprops/action-gh-release@v2
