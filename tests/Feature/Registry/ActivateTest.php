@@ -126,6 +126,18 @@ it('throws RegistryCorruptException when the registry tracks an account whose sn
     $this->registry->activate('uuid-a::org-a');
 })->throws(RegistryCorruptException::class);
 
+it('throws RegistryCorruptException, not a raw PHP error, for a snapshot file missing required fields', function () {
+    $this->seedFakeRegistryFile();
+    mkdir($this->fakeHome.'/accounts', recursive: true);
+    $codec = new App\Services\SnapshotCodec;
+    file_put_contents($this->fakeHome.'/accounts/'.$codec->filename('uuid-a::org-a'), json_encode([
+        'schema_version' => 1, 'account_key' => 'uuid-a::org-a',
+        // missing "credentials" and "oauth_account"
+    ]));
+
+    $this->registry->activate('uuid-a::org-a');
+})->throws(RegistryCorruptException::class);
+
 it('switch - activates the previous account', function () {
     $this->seedFakeAccountPair();
     $this->seedFakeCredentialsFile();

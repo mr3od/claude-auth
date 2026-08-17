@@ -27,6 +27,12 @@ final readonly class AccountSnapshot
     {
         $decoded = (object) $decoded;
 
+        foreach (['account_key', 'credentials', 'oauth_account', 'captured_at'] as $required) {
+            if (! isset($decoded->{$required})) {
+                throw new \RuntimeException("Snapshot data is missing required field \"{$required}\".");
+            }
+        }
+
         return new self(
             accountKey: $decoded->account_key,
             credentials: $decoded->credentials,

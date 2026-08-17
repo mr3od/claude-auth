@@ -107,7 +107,11 @@ final class Registry
             throw new RegistryCorruptException("Account \"{$accountKey}\" is tracked in the registry but its snapshot file is missing.");
         }
 
-        $snapshot = $this->codec->decode($snapshotData);
+        try {
+            $snapshot = $this->codec->decode($snapshotData);
+        } catch (\RuntimeException $e) {
+            throw new RegistryCorruptException("Account \"{$accountKey}\" is tracked in the registry but its snapshot file is corrupt: {$e->getMessage()}");
+        }
 
         $this->ensureDirectoriesExist();
 
@@ -270,10 +274,15 @@ final class Registry
             $data = $this->store->readJsonPreservingTypes($file);
 
             if ($data === null) {
-                continue; // corrupt/unreadable snapshot - best-effort, skip rather than fail the whole purge
+                continue; // unreadable snapshot - best-effort, skip rather than fail the whole purge
             }
 
-            $snapshot = $this->codec->decode($data);
+            try {
+                $snapshot = $this->codec->decode($data);
+            } catch (\RuntimeException) {
+                continue; // corrupt/incomplete snapshot - same best-effort skip
+            }
+
             $accounts[] = $this->rowFromSnapshot($snapshot, $oldAliases[$snapshot->accountKey] ?? null, $snapshot->capturedAt, null);
         }
 
@@ -397,8 +406,14 @@ final class Registry
         foreach ($files as $file) {
             $data = $this->store->readJsonPreservingTypes($file);
 
-            if ($data !== null) {
+            if ($data === null) {
+                continue; // unreadable snapshot - best-effort, skip rather than fail the whole import
+            }
+
+            try {
                 $records[] = $this->upsert($this->codec->decode($data));
+            } catch (\RuntimeException) {
+                continue; // corrupt/incomplete snapshot - same best-effort skip
             }
         }
 
