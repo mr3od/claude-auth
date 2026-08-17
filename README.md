@@ -1,34 +1,62 @@
 # claude-auth
 
+[![Latest Version](https://img.shields.io/packagist/v/mr3od/claude-auth.svg)](https://packagist.org/packages/mr3od/claude-auth)
+[![License](https://img.shields.io/packagist/l/mr3od/claude-auth.svg)](LICENSE)
+[![Downloads](https://img.shields.io/packagist/dt/mr3od/claude-auth.svg)](https://packagist.org/packages/mr3od/claude-auth)
+
 claude-auth stores and switches between multiple Claude Code account credentials. It keeps your
-settings, history, and memory centralized across every account.
+settings, history, and memory centralized across every account — no forking, no separate profiles.
 
-The design follows primary-source research into
-[`Loongphy/codex-auth`](https://github.com/Loongphy/codex-auth), a similar tool for the OpenAI
-Codex CLI. See [`docs/codex-auth-research.md`](docs/codex-auth-research.md) for the full findings,
-and the "Applicability to a Claude Code Equivalent" section for the mapping this project follows.
+## Install
 
-## Status
+### Prebuilt binary (recommended)
 
-All 8 commands work:
+Download the binary for your platform from the
+[Releases page](https://github.com/mr3od/claude-auth/releases). It bundles its own PHP runtime, so
+you don't need PHP installed.
 
-- `accounts` — Lists stored accounts and marks which one is active. Add `--json` for
-  machine-readable output.
-- `login` — Runs Claude Code login in an isolated scratch config directory, then stores the
-  result as a new account.
-- `switch <query>` — Switches the active account. `<query>` can be a row number, an alias, or an
-  email substring. Use `switch -` to switch back to the previous account.
-- `remove <selectors...>` — Removes one or more stored accounts. Prompts for confirmation unless
-  you pass `--force`. Use `--all` to remove every account.
-- `alias set <selector> <alias>` / `alias clear <selector>` — Sets or clears a display alias for
-  an account.
-- `import <path>` — Imports an existing snapshot file, or a directory of them, as new accounts.
-  Use `--purge` to rebuild the registry from whatever snapshot files already exist on disk.
-- `export [<dir>]` — Copies every stored account's snapshot file to a directory. Defaults to
-  `~/.claude-auth/backups`.
-- `clean` — Prunes old backups and deletes snapshot files no longer tracked by the registry.
+```bash
+curl -L -o claude-auth <release-asset-url-for-your-platform>
+chmod +x claude-auth
+sudo mv claude-auth /usr/local/bin/claude-auth
+```
 
-Run `php claude-auth <command> --help` for full option details.
+### Composer
+
+If you already have PHP 8.3+ and Composer, install it as a global package instead:
+
+```bash
+composer global require mr3od/claude-auth
+```
+
+Make sure Composer's global `bin` directory is on your `PATH` (`composer global config bin-dir
+--absolute`).
+
+## Usage
+
+```bash
+claude-auth login                 # Log in and store the result as a new account
+claude-auth accounts              # List stored accounts, mark the active one
+claude-auth switch work           # Switch to the account matching "work"
+claude-auth switch -              # Switch back to the previously active account
+```
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `accounts [--json]` | List stored accounts and mark which one is active. |
+| `login [--alias=]` | Run Claude Code login in an isolated scratch config directory, then store the result as a new account. |
+| `switch [<query>] [--json]` | Switch the active account. `<query>` can be a row number, an alias, or an email substring. Use `switch -` to switch back to the previous account. |
+| `remove <selectors...> [--all] [--force] [--json]` | Remove one or more stored accounts. Prompts for confirmation unless you pass `--force`. |
+| `alias set <selector> <alias>` | Set a display alias for an account. |
+| `alias clear <selector>` | Clear a display alias for an account. |
+| `import <path> [--alias=]` | Import an existing snapshot file, or a directory of them, as new accounts. |
+| `import --purge` | Rebuild the registry from whatever snapshot files already exist on disk. |
+| `export [<dir>]` | Copy every stored account's snapshot file to a directory. Defaults to `~/.claude-auth/backups`. |
+| `clean` | Prune old backups and delete snapshot files no longer tracked by the registry. |
+
+Run `claude-auth <command> --help` for full option details.
 
 ## Design
 
@@ -46,10 +74,22 @@ Run `php claude-auth <command> --help` for full option details.
   matching backup file back over the live path.
 - claude-auth never calls an undocumented Anthropic endpoint with a raw token.
 
-## Development
+The design follows primary-source research into
+[`Loongphy/codex-auth`](https://github.com/Loongphy/codex-auth), a similar tool for the OpenAI
+Codex CLI. See [`docs/codex-auth-research.md`](docs/codex-auth-research.md) for the full findings,
+and the "Applicability to a Claude Code Equivalent" section for the mapping this project follows.
+
+## Contributing
+
+Bug reports and pull requests are welcome. Before opening a PR, run the test suite:
 
 ```bash
 composer install
-php claude-auth accounts
 vendor/bin/pest
 ```
+
+See [`AGENTS.md`](AGENTS.md) for this project's coding conventions.
+
+## License
+
+claude-auth is open-source software licensed under the [MIT license](LICENSE).
