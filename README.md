@@ -104,7 +104,7 @@ Run `claude-auth <command> --help` for full option details.
   the result as a new account; run `switch` to make it active.
 
 Inspired by [`codex-auth`](https://github.com/Loongphy/codex-auth), a similar tool for the OpenAI
-Codex CLI. Background research: [`docs/codex-auth-research.md`](docs/codex-auth-research.md).
+Codex CLI.
 
 ## Contributing
 
