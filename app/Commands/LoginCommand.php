@@ -31,6 +31,10 @@ class LoginCommand extends Command
         try {
             $snapshot = $registry->captureFromPaths($result->credentialsPath, $result->claudeJsonPath);
             $account = $registry->upsert($snapshot, $this->option('alias'));
+        } catch (\RuntimeException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         } finally {
             ($result->cleanup)();
         }

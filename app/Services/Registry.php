@@ -191,13 +191,16 @@ final class Registry
     public function captureFromPaths(string $credentialsPath, string $claudeJsonPath): AccountSnapshot
     {
         $credentials = $this->store->readJsonPreservingTypes($credentialsPath);
-        $claudeJson = $this->store->readJsonOrNull($claudeJsonPath);
+        $claudeJson = $this->store->readJsonPreservingTypes($claudeJsonPath);
 
-        if ($credentials === null || $claudeJson === null || ! isset($claudeJson['oauthAccount'])) {
+        if ($credentials === null || $claudeJson === null || ! isset($claudeJson->oauthAccount)) {
             throw new \RuntimeException("Could not read a complete account from \"{$credentialsPath}\" and \"{$claudeJsonPath}\".");
         }
 
-        $oauthAccount = $claudeJson['oauthAccount'];
+        // Shallow cast only: preserves the object/array distinction on nested values (the same
+        // reason activate()'s live-file write already avoids a fully-recursive assoc decode),
+        // since this oauthAccount block gets written back into a live claude.json by activate().
+        $oauthAccount = (array) $claudeJson->oauthAccount;
 
         return new AccountSnapshot(
             accountKey: $this->deriveAccountKey($oauthAccount),

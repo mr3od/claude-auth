@@ -79,3 +79,19 @@ it('reports a failed login without storing anything', function () {
 
     expect(is_file($this->fakeHome.'/registry.json'))->toBeFalse();
 });
+
+it('reports a handled error, not a crash, when a "successful" login writes an incomplete pair', function () {
+    Process::fake(function (PendingProcess $process) {
+        $scratchDir = $this->environmentOf($process)['CLAUDE_CONFIG_DIR'];
+        // .claude.json is missing entirely - simulates an unexpected login-flow quirk.
+        file_put_contents($scratchDir.'/.credentials.json', json_encode(['claudeAiOauth' => ['accessToken' => 't']]));
+
+        return Process::result(exitCode: 0);
+    });
+
+    $this->artisan('login')
+        ->expectsOutputToContain('Could not read a complete account')
+        ->assertExitCode(1);
+
+    expect(is_file($this->fakeHome.'/registry.json'))->toBeFalse();
+});

@@ -42,6 +42,19 @@ it('captures credentials.json without collapsing empty JSON objects into arrays'
     expect($snapshot->credentials->claudeAiOauth->extra)->toEqual(new stdClass);
 });
 
+it('captures oauthAccount without collapsing a nested empty JSON object into an array', function () {
+    file_put_contents($this->scratchDir.'/.claude.json', json_encode([
+        'oauthAccount' => [
+            'accountUuid' => 'new-uuid', 'organizationUuid' => 'new-org',
+            'emailAddress' => 'new@example.com', 'extra' => new stdClass,
+        ],
+    ]));
+
+    $snapshot = $this->registry->captureFromPaths($this->scratchDir.'/.credentials.json', $this->scratchDir.'/.claude.json');
+
+    expect($snapshot->oauthAccount['extra'])->toEqual(new stdClass);
+});
+
 it('falls back to accountUuid alone when organizationUuid is absent', function () {
     file_put_contents($this->scratchDir.'/.claude.json', json_encode([
         'oauthAccount' => ['accountUuid' => 'solo-uuid', 'emailAddress' => 'solo@example.com'],
