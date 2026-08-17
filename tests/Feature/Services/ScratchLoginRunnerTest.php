@@ -43,7 +43,8 @@ it('passes --email, --console, and --sso through to the subprocess command', fun
         return Process::result(exitCode: 0);
     });
 
-    (new ScratchLoginRunner)->run(email: 'x@example.com', console: true, sso: true, onOutput: fn () => null);
+    $result = (new ScratchLoginRunner)->run(email: 'x@example.com', console: true, sso: true, onOutput: fn () => null);
+    ($result->cleanup)();
 });
 
 it('cleans up the scratch dir and throws on a failed login, never returning a result', function () {
