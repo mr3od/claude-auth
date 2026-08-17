@@ -27,8 +27,18 @@ it('captures a snapshot from a pair of files, deriving account_key from accountU
     $snapshot = $this->registry->captureFromPaths($this->scratchDir.'/.credentials.json', $this->scratchDir.'/.claude.json');
 
     expect($snapshot->accountKey)->toBe('new-uuid::new-org')
-        ->and($snapshot->credentials['claudeAiOauth']['accessToken'])->toBe('scratch-token')
+        ->and($snapshot->credentials->claudeAiOauth->accessToken)->toBe('scratch-token')
         ->and($snapshot->oauthAccount['emailAddress'])->toBe('new@example.com');
+});
+
+it('captures credentials.json without collapsing empty JSON objects into arrays', function () {
+    file_put_contents($this->scratchDir.'/.credentials.json', json_encode([
+        'claudeAiOauth' => ['accessToken' => 'scratch-token', 'extra' => new stdClass],
+    ]));
+
+    $snapshot = $this->registry->captureFromPaths($this->scratchDir.'/.credentials.json', $this->scratchDir.'/.claude.json');
+
+    expect($snapshot->credentials->claudeAiOauth->extra)->toEqual(new stdClass);
 });
 
 it('falls back to accountUuid alone when organizationUuid is absent', function () {

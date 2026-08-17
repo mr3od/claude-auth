@@ -24,9 +24,9 @@ final class SnapshotCodec
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>|object  $data
      */
-    public function decode(array $data): AccountSnapshot
+    public function decode(array|object $data): AccountSnapshot
     {
         return AccountSnapshot::fromSnapshotFile($data);
     }

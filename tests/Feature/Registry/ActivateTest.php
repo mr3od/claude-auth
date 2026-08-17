@@ -58,6 +58,25 @@ it('does not corrupt empty JSON objects elsewhere in ~/.claude.json into empty a
         ->and($after->seenNotifications)->toEqual(new stdClass);
 });
 
+it('does not corrupt empty JSON objects in credentials.json across a capture-then-activate round trip', function () {
+    $this->seedFakeAccountPair();
+    file_put_contents($this->fakeCredentialsFile, json_encode([
+        'claudeAiOauth' => ['accessToken' => 'token-a', 'extra' => new stdClass],
+    ]));
+    $this->seedFakeClaudeJsonFile();
+
+    // Capture account A (with its empty-object field) as a fresh snapshot, the
+    // same way `login`/`import` would, then activate account B, then switch
+    // back to A - round-tripping the captured snapshot back onto the live file.
+    $snapshot = $this->registry->captureFromPaths($this->fakeCredentialsFile, $this->fakeClaudeJsonFile);
+    $this->registry->upsert($snapshot);
+    $this->registry->activate('uuid-b::org-b');
+    $this->registry->activate($snapshot->accountKey);
+
+    $after = json_decode(file_get_contents($this->fakeCredentialsFile));
+    expect($after->claudeAiOauth->extra)->toEqual(new stdClass);
+});
+
 it('preserves the live credentials file\'s pre-existing permission mode', function () {
     $this->seedFakeAccountPair();
     $this->seedFakeCredentialsFile();

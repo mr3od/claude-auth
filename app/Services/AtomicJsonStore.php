@@ -39,9 +39,23 @@ final class AtomicJsonStore
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * Reads a JSON file without collapsing objects into arrays, so an empty
+     * `{}` stays distinguishable from an empty `[]` all the way through a
+     * later json_encode(). Use this instead of readJsonOrNull() for any file
+     * whose foreign/unknown-shape content will be written back out whole.
      */
-    public function writeJsonAtomic(string $path, array $data, int $permissions = 0600): void
+    public function readJsonPreservingTypes(string $path): ?object
+    {
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $decoded = json_decode(file_get_contents($path));
+
+        return is_object($decoded) ? $decoded : null;
+    }
+
+    public function writeJsonAtomic(string $path, mixed $data, int $permissions = 0600): void
     {
         $dir = dirname($path);
         $tempPath = $dir.'/.'.basename($path).'.tmp.'.bin2hex(random_bytes(6));
@@ -90,10 +104,7 @@ final class AtomicJsonStore
         return $toDelete;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function writeJsonPreservingPermissions(string $path, array $data): void
+    public function writeJsonPreservingPermissions(string $path, mixed $data): void
     {
         $permissions = is_file($path) ? fileperms($path) & 0777 : 0600;
 

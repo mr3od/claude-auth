@@ -83,7 +83,7 @@ final class Registry
             throw new AccountNotFoundException($accountKey);
         }
 
-        $snapshotData = $this->store->readJsonOrNull($this->snapshotPath($accountKey));
+        $snapshotData = $this->store->readJsonPreservingTypes($this->snapshotPath($accountKey));
 
         if ($snapshotData === null) {
             throw new RegistryCorruptException("Account \"{$accountKey}\" is tracked in the registry but its snapshot file is missing.");
@@ -172,7 +172,7 @@ final class Registry
 
     public function captureFromPaths(string $credentialsPath, string $claudeJsonPath): AccountSnapshot
     {
-        $credentials = $this->store->readJsonOrNull($credentialsPath);
+        $credentials = $this->store->readJsonPreservingTypes($credentialsPath);
         $claudeJson = $this->store->readJsonOrNull($claudeJsonPath);
 
         if ($credentials === null || $claudeJson === null || ! isset($claudeJson['oauthAccount'])) {
@@ -227,7 +227,7 @@ final class Registry
             return $this->importDirectory($path, $alias);
         }
 
-        $data = $this->store->readJsonOrNull($path);
+        $data = $this->store->readJsonPreservingTypes($path);
 
         if ($data === null) {
             throw new \RuntimeException("Could not read snapshot file \"{$path}\".");
@@ -244,7 +244,7 @@ final class Registry
 
         $accounts = [];
         foreach (glob($this->home.'/accounts/*.snapshot.json') ?: [] as $file) {
-            $data = $this->store->readJsonOrNull($file);
+            $data = $this->store->readJsonPreservingTypes($file);
 
             if ($data === null) {
                 continue; // corrupt/unreadable snapshot - best-effort, skip rather than fail the whole purge
@@ -372,7 +372,7 @@ final class Registry
 
         $records = [];
         foreach ($files as $file) {
-            $data = $this->store->readJsonOrNull($file);
+            $data = $this->store->readJsonPreservingTypes($file);
 
             if ($data !== null) {
                 $records[] = $this->upsert($this->codec->decode($data));
